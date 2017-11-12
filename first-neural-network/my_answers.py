@@ -97,10 +97,12 @@ class NeuralNetwork(object):
         
         hidden_error_term = hidden_error * hidden_outputs * (1 - hidden_outputs)
         
+        # Note: Multiplying with learning rate is done in the update_weights function
+
         # Weight step (input to hidden)
-        delta_weights_i_h += self.lr * hidden_error_term * X[:, None] 
+        delta_weights_i_h += hidden_error_term * X[:, None] 
         # Weight step (hidden to output)
-        delta_weights_h_o += self.lr * output_error_term * hidden_outputs[:, None]
+        delta_weights_h_o += output_error_term * hidden_outputs[:, None]
         return delta_weights_i_h, delta_weights_h_o
 
     def update_weights(self, delta_weights_i_h, delta_weights_h_o, n_records):
@@ -113,8 +115,19 @@ class NeuralNetwork(object):
             n_records: number of records
 
         '''
-        self.weights_hidden_to_output += delta_weights_h_o # update hidden-to-output weights with gradient descent step
-        self.weights_input_to_hidden += delta_weights_i_h  # update input-to-hidden weights with gradient descent step
+
+        # Modifying learning rate based on the below comment from Udacity reviewer:
+        #
+        # After modifying the weights updates with normalization by n_records, 
+        # the learning rate would need to be adjusted so that the network successfully converges, but is still time efficient.
+        # The quotient of the learning rate / the number of records should end up around 0.01 or lower (i.e. self.lr / n_records ~ 0.01).
+        lr = self.lr * n_records
+
+        # Changed weight updates based on the below comment from Udacity reviewer:
+        #
+        # The backpropagation algorithm is implemented correctly. However, the weights updates must be normalized by the number of records.
+        self.weights_hidden_to_output += lr * delta_weights_h_o / n_records # update hidden-to-output weights with gradient descent step
+        self.weights_input_to_hidden += lr * delta_weights_i_h / n_records # update input-to-hidden weights with gradient descent step
 
     def run(self, features):
         ''' Run a forward pass through the network with input features 
